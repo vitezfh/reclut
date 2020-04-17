@@ -1,0 +1,5 @@
+pics/
+venv/
+.idea/
+__pythoncache__
+**/*cache*
