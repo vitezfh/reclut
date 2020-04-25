@@ -15,6 +15,9 @@ from time import time
 from multiprocessing.pool import ThreadPool
 import concurrent.futures
 
+global archive_file
+
+
 def main(*args, **kwargs):
 
     p = argparse.ArgumentParser(prog="reclut download",
@@ -29,10 +32,15 @@ def main(*args, **kwargs):
     p.add_argument("-s", "--sorting",         help="sorting: top, hot or rising. Defaults to top",   type=str)
     p.add_argument("-t", "--time-filter",     help="only if sorting by top: 'all', 'month', 'year' (default)",
                                                                                                      type=str)
+    p.add_argument("-A", "--archive",         help="<path> to archive file",                         type=str)
     p.add_argument("--dry-run",               help="skips downloading",                 action="store_true")
     p.add_argument("-v", "--verbose",         help="increases output verbosity",        action="store_true")
     args = p.parse_args(*args, **kwargs)
     #setup_args() # Look into this
+
+
+    if args.archive_file:
+        archive_file = args.archive_file
 
     reddit_kwargs = {}
     for key in vars(args):

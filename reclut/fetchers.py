@@ -5,7 +5,7 @@ import youtube_dl
 import glob, os, sys
 
 
-global archived
+global archived, archive_file
 
 archived = []
 
@@ -94,9 +94,10 @@ def fetch_yt_video(count, url, directory, post=None, reddit_type=""):
 
 def archive(func):
     def inner(*args, **kwargs):
-        file = "./archive.txt"
+        if archive_file == None:
+            exit()
         if kwargs["count"] == "0":
-            with open(file, "r") as f:
+            with open(archive_file, "r") as f:
                 for line in f:
                     archived.append(line.split("\n")[0])
         last_piece = kwargs["url"].split("/")[-1]
