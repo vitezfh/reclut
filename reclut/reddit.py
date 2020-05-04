@@ -1,5 +1,3 @@
-from reclut.verbose_wrapper import verbose
-
 from configparser import RawConfigParser
 import os
 import praw

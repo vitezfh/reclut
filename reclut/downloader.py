@@ -1,4 +1,3 @@
-#from reclut.utils.verbose_wrapper import verbose
 from reclut.reddit import init_reddit
 from reclut.fetchers import fetch_file, fetch_yt_video, fetch_mimes, download
 from reclut.posts import get_posts
@@ -32,13 +31,13 @@ def main(*args, **kwargs):
     p.add_argument("-s", "--sorting",         help="sorting: top, hot or rising. Defaults to top",   type=str)
     p.add_argument("-t", "--time-filter",     help="only if sorting by top: 'all', 'month', 'year' (default)",
                                                                                                      type=str)
-    p.add_argument("-A", "--archive",         help="<path> to archive file",                         type=str)
+    p.add_argument("-A", "--archive",         help="<path> to archive file [NOT WORKING]",                         type=str)
     p.add_argument("--dry-run",               help="skips downloading",                 action="store_true")
     p.add_argument("-v", "--verbose",         help="increases output verbosity",        action="store_true")
     args = p.parse_args(*args, **kwargs)
     #setup_args() # Look into this
 
-
+    archive_file = None
     if args.archive:
         archive_file = args.archive
 
@@ -63,7 +62,7 @@ def main(*args, **kwargs):
     else:
         reddit_kwargs["adult"] = None
 
-    verbose = False
+    verbose = True
     if args.verbose:
         verbose = args.verbose
 
@@ -117,6 +116,5 @@ def main(*args, **kwargs):
             executor.map(download, get_posts(reddit, directory,
                                              reddit_kwargs["reddit_type"],
                                              reddit_kwargs["adult"],
-                                             limit, verbose))
-
+                                             limit))
 

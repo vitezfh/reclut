@@ -1,4 +1,4 @@
-def get_posts(reddit, directory, reddit_type, adult, limit, verbose):
+def get_posts(reddit, directory, reddit_type, adult, limit):
 
 
     def post_generator(reddits, adult="none", limit=5):
@@ -17,7 +17,6 @@ def get_posts(reddit, directory, reddit_type, adult, limit, verbose):
 
     posts = []
     for post, post_num in post_generator(reddit, adult=adult, limit=limit):
-        if verbose:
-            print(f"\n#{post_num}: {post.title}\n{post.url}")
+        print(f"\n#{post_num}: {post.title}\n{post.url}")
         posts.append((post, post_num, directory, reddit_type))
     return posts

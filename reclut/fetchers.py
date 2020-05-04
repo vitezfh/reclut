@@ -1,5 +1,3 @@
-from reclut.verbose_wrapper import verbose
-
 import requests
 import youtube_dl
 import glob, os, sys
@@ -9,8 +7,7 @@ global archived, archive_file
 
 archived = []
 
-
-def download(args): # Gets mapped as a worker by executor (and silences prints, etc.)
+def download(args): # Gets mapped as a worker by executor (gets squelched)
     post, post_num, directory, reddit_type = args
     fetch_mimes(post, post_num, directory, reddit_type=reddit_type)
 
@@ -110,19 +107,18 @@ def archive(func):
                 f.write(f"{tag}\n")
             return func(*args, **kwargs)
         else:
-            raise IOError('File already downloaded') # Requires refinement...
+            raise IOError('File already downloaded') # Requires refinement
     return inner
 
 
-@archive
 def get_filename(count=0, url="", post=None, reddit_type=""):
-    named =True
     """
     Returns a string formatted as, for example
     001-subreddit-xxxxxxxxxxxx.jpg
     024-funnygifs-djakj431kjdja.gif
     000-user123-BigAwesomeHorse.webm
     """
+    named = True
     last_piece = url.rsplit("/")[-1]
     extension = get_extension(url)
     tag = last_piece.rsplit(extension)[0][:-1]
