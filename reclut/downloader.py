@@ -39,8 +39,8 @@ def main(*args, **kwargs):
     #setup_args() # Look into this
 
 
-    if args.archive_file:
-        archive_file = args.archive_file
+    if args.archive:
+        archive_file = args.archive
 
     reddit_kwargs = {}
     for key in vars(args):
