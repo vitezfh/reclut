@@ -4,7 +4,7 @@
 
 import os
 
-__version__ = 'v0.1.11'
+__version__ = 'v0.2'
 
 dir_path_to_conf = os.path.join(os.path.expanduser('~'), '.config/reclut')
 if 'XDG_CONFIG_HOME' in os.environ:
