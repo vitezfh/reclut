@@ -1,9 +1,9 @@
-import requests
-import youtube_dl
-import glob, os, sys
-from multiprocessing.pool import ThreadPool
 import concurrent.futures
-import time
+import os
+
+import requests
+
+
 class Downloader(object):
     def __init__(self, Query, directory, archive_file=None):
         self.reddit = Query
@@ -11,11 +11,9 @@ class Downloader(object):
         self.archive_file = archive_file
         self.archived = []
 
-
-    def download_worker(self, args): # Gets mapped as a worker by executor (gets squelched) 
+    def download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
         post, post_num = args
         self.fetch_mimes(post, post_num)
-
 
     def download(self, threads):
         if threads == 0 or threads == 1:
@@ -25,18 +23,17 @@ class Downloader(object):
             # Quick benchmark:
             #   Multi-threaded(6): 18.5s
             #   Single-threaded: 42.5s
-            #with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+            # with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
             #    executor.map(download_worker, self.reddit.get_posts())
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
                 executor.map(self.download_worker, self.reddit.get_posts())
 
-
     def fetch_mimes(self, post, post_num):
         mime_types = {
-            "static_image":     [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
-            "animated_image":   [".gif"],
-            "video":            [".webm"],
-            "misc":             [".gifv", "gallery", "/a/"]
+            "static_image": [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
+            "animated_image": [".gif"],
+            "video": [".webm"],
+            "misc": [".gifv", "gallery", "/a/"]
         }
         for key in mime_types:
             mime_types[key] = any(map(lambda x: x in post.url, mime_types[key]))
@@ -78,7 +75,6 @@ class Downloader(object):
         else:
             print(f"#######\nSkipping: {post.url} \n#######\n")
 
-
     def fetch_file(self, count, url, post=None):
         try:
             file_name = self.get_filename(count, url, post)
@@ -91,23 +87,21 @@ class Downloader(object):
                     if not block:
                         break
                     handle.write(block)
-                r.close
-
 
     def fetch_yt_video(self, count, url, post=None):
+        import youtube_dl
         try:
             filename = self.get_filename(count, url, post).strip(".mpd")
         except IOError:
             return
-        ydl_opts = {'format':   'dash-VIDEO-1+dash-AUDIO-1',
-                    'outtmpl':  f'{filename}',
-                    'quiet':    True}
+        ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
+                    'outtmpl': f'{filename}',
+                    'quiet': True}
         working_directory = os.getcwd()
         os.chdir(self.directory)
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         os.chdir(working_directory)
-
 
     def get_filename(self, count, url, post):
         """
@@ -133,7 +127,6 @@ class Downloader(object):
         file_name = f"{int(count):03d}-{name}-{tag}.{extension}"
         return file_name
 
-
     def archive(self, count, url, archive_file):
         if count == 0:
             with open(archive_file, "r") as f:
@@ -149,13 +142,11 @@ class Downloader(object):
             with open(archive_file, "a") as f:
                 f.write(f"{tag}\n")
         else:
-            raise IOError('File already downloaded') # Needs refinement
-
+            raise IOError('File already downloaded')  # Needs refinement
 
     @staticmethod
     def get_extension(url):
         return url.rsplit("/")[-1].split(".")[-1].split("?")[0]
-
 
     @staticmethod
     def clean_title(title):
@@ -176,4 +167,3 @@ class Downloader(object):
         for to_replace, replacement in replacement_list:
             title = title.replace(to_replace, replacement)
         return title
-

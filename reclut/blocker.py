@@ -1,5 +1,6 @@
-from reclut.reddit import reddit
 import sys
+
+from reclut.query import reddit
 
 
 def main(*args, **kwargs):

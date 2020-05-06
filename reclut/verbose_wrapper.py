@@ -1,10 +1,14 @@
 from __future__ import unicode_literals
-from functools import wraps
+
+import os
+import sys
 from contextlib import redirect_stdout
+from functools import wraps
 from inspect import signature, Parameter
-import sys, os
 
 """Thanks, James @ github.com/jamespreed"""
+
+
 def verbose(func, default=True):
     @wraps(func)
     def decorator(*args, verbose=default, **kwargs):

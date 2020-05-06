@@ -1,5 +1,7 @@
 import sys
+
 from reclut import __version__
+
 
 def main():
     try:
