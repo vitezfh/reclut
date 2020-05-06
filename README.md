@@ -1,16 +1,23 @@
-# reclut
+**recult** - a set of tools for reddit; for data-hoarding and avoidance of interaction with the site.
+Can presently be used for downloading media (images, gifs, linked youtube vids with youtube-dl) from subreddits and users.
+It downloads concurrently, and with a symple archiving system built in.
+There's also a quick command for blocking many users at once (to, for example, to easily avoid downloading their posts)
 
-Recult is meant to be a set of tools for reddit for data-hoarding, avoiding repetitive actions and your general exposure to their webui;
-It can presently be used for downloading media (jpg,gif,webm,etc.) from subreddits and users.
-It also downloads concurrently, meaning it can aggressively utilize your bandwidth. There is a built in archiver as well, to reduce repeated downloading. 
+# Installation
 
-The config should be initialized upon installation to your default config folder. Usually .config/reclut/config
+- Clone the repo: `git clone "https://github.com/vitezfh/reclut"`
 
-So far I've only tested it on linux, and I fully expect it not to work on other platforms until I get to fixing that.
+- An empty config should be initialized upon installation to your default config folder. Usually `$HOME/.config/reclut/config`
+- Fill it up by following this: https://praw.readthedocs.io/en/latest/getting_started/authentication.html
+  
+  **Make a new account for this**, unless you already have one just for this kind of purpose. Your username, password and tokens are all stored in **plaintext**. I'll get around to changing this, but until then.
 
-reclut depends heavily on PRAW, so for configuration have a look at https://praw.readthedocs.io/en/latest/getting_started/authentication.html
+# Examples
 
-I plan on decouppling it from PRAW down the road.
+To download /r/wallpapers submissions; the top 10 of the past year; 4 at a time, and archiving to wallpapers.txt:
+``
 
 
+# Side Notes
+Decoupling from authentication in PRAW is a priority for the future.
 I develop this sporadically; and for my own purposes, meaning that breakage and interface changes are expected.
