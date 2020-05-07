@@ -24,5 +24,4 @@ $ `reclut download --subreddit wallpapers --sorting top --time year --limit 10 -
 $ `reclut download -r wallpapers -s top -t year -n 10 -T 4 -A wallpapers.txt`
 
 # Side Notes
-Decoupling from authentication in PRAW is a priority for the future.
-I develop this sporadically; and for my own purposes, meaning that breakage and interface changes are expected.
+Avoiding authentication is definitely desired and will be done if possible,
