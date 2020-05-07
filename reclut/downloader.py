@@ -1,98 +1,169 @@
-# config file is stored in $HOME/.config/reclut/config
-import argparse
+import concurrent.futures
 import os
 
-from reclut.query import RedditQuery
+import requests
 
 
-def main(*args, **kwargs):
-    p = argparse.ArgumentParser(prog="reclut download",
-                                description="Downloads media from subreddit or user, according to options",
-                                epilog="Needs authorization, see github.com/vitezfh/reclut")
-    add_arg = p.add_argument
-    p.add_argument("-r", "--subreddit",
-                   help="subreddit to fetch from", type=str)
-    p.add_argument("-u", "--user",
-                   help="user to fetch from, doesn't yey work with --subreddit", type=str)
-    p.add_argument("-n", "--limit",
-                   help="limit number of posts to fetch, defaults to 10", type=int)
-    p.add_argument("-d", "--directory",
-                   help="directory to store into", type=str)
-    p.add_argument("-a", "--adult", "--nsfw",
-                   help="nsfw: none, allowed or only. Defaults to none", type=str)
-    p.add_argument("-s", "--sorting",
-                   help="sorting: top, hot or rising. Defaults to top", type=str)
-    p.add_argument("-t", "--time",
-                   help="only if sorting by top: 'all', 'month', 'year' (default)", type=str)
-    p.add_argument("-T", "--threads",
-                   help="num of simultaneous downloads, defaults to 5", type=int)
-    p.add_argument("-A", "--archive",
-                   help="<path> to archive file", type=str)
-    p.add_argument("--dry-run",
-                   help="skips downloading", action="store_true")
-    p.add_argument("-q", "--quiet",
-                   help="silent, doesn't print to stdout", action="store_true")
-    args = p.parse_args(*args, **kwargs)
-    # setup_args() # Look into this
+class Downloader(object):
+    def __init__(self, query, directory, archive_file=None):
+        self.reddit = query
+        self.directory = directory
+        self.archive_file = archive_file
+        self.archived = []
 
-    reddit_kwargs = {}
+    def download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
+        post, post_num = args
+        self.fetch_mimes(post, post_num)
 
-    if args.subreddit:
-        reddit_kwargs["subreddit"] = args.subreddit
+    def download(self, threads):
+        if threads == 0 or threads == 1:
+            for post, post_num in self.reddit.get_posts():
+                self.fetch_mimes(post, post_num)
+        else:
+            # Quick benchmark:
+            #   Multi-threaded(6): 18.5s
+            #   Single-threaded: 42.5s
+            # with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+            #    executor.map(download_worker, self.reddit.get_posts())
+            with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+                executor.map(self.download_worker, self.reddit.get_posts())
 
-    if args.user and not args.subreddit:
-        reddit_kwargs["user"] = args.user
+    def fetch_mimes(self, post, post_num):
+        mime_types = {
+            "static_image": [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
+            "animated_image": [".gif"],
+            "video": [".webm"],
+            "misc": [".gifv", "gallery", "/a/"]
+        }
+        for key in mime_types:
+            mime_types[key] = any(map(lambda x: x in post.url, mime_types[key]))
+        try:
+            post_thumbnail_url = post.media["oembed"]["thumbnail_url"]
+        except:
+            post_thumbnail_url = None
+        try:
+            post_media_fallback_url = post.media["reddit_video"]["fallback_url"]
+        except:
+            post_media_fallback_url = None
+        try:
+            post_media_dash_url = post.media["reddit_video"]["dash_url"]
+        except:
+            post_media_dash_url = None
+        if mime_types["static_image"] or mime_types["animated_image"]:
+            self.fetch_file(post_num, post.url, post)
+        elif "imgur" in post.url and not mime_types["misc"]:
+            # TODO: These fail silently (because url-s would 403, etc). It does need a more precise except...
+            # This is good at the time of writing; as it passes on missing, deleted, etc. files.
+            try:
+                tag = post.url.rsplit("/")[-1]
+                self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
+            except:
+                pass
+        elif "gfycat" in post.url and "gfycat" in post_thumbnail_url:
+            # TODO: These fail silently (because url-s would 403, etc). 
+            # This is good at the time of writing; as it passes on missing, deleted, etc. files.
+            try:
+                tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
+                url = "https://giant.gfycat.com/" + tag + ".webm"
+                self.fetch_file(post_num, url, post)
+            except:
+                pass
+        elif "v.redd.it" in post.url and post_media_dash_url:
+            self.fetch_yt_video(post_num, post_media_dash_url, post)
+        elif "v.redd.it" in post.url and post_media_fallback_url:
+            self.fetch_yt_video(post_num, post_media_fallback_url, post)
+        else:
+            print(f"#######\nSkipping: {post.url} \n#######\n")
 
-    if args.adult:
-        reddit_kwargs["adult"] = args.adult
+    def fetch_file(self, count, url, post=None):
+        try:
+            file_name = self.get_filename(count, url, post)
+        except IOError:
+            return
+        with open(os.path.join(self.directory, file_name), "wb+") as handle:
+            with requests.get(url, stream=True, timeout=1) as r:
+                r.raise_for_status()
+                for block in r.iter_content(chunk_size=8192):
+                    if not block:
+                        break
+                    handle.write(block)
 
-    quiet = False
-    if args.quiet:
-        quiet = args.quiet
+    def fetch_yt_video(self, count, url, post=None):
+        import youtube_dl
+        try:
+            filename = self.get_filename(count, url, post).strip(".mpd")
+        except IOError:
+            return
+        ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
+                    'outtmpl': f'{filename}',
+                    'quiet': True}
+        working_directory = os.getcwd()
+        os.chdir(self.directory)
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        os.chdir(working_directory)
 
-    if args.limit:
-        reddit_kwargs["limit"] = args.limit
+    def get_filename(self, count, url, post):
+        """
+        Returns a string formatted as, for example
+        001-subreddit-xxxxxxxxxxxx.jpg
+        002-funnygifs-djakj431kjdja.gif
+        003-user123-BigAwesomeHorse.webm
+        """
+        if self.archive_file: self.archive(count, url, self.archive_file)
 
-    if args.sorting:
-        reddit_kwargs["sorting"] = args.sorting
-    else:
-        reddit_kwargs["sorting"] = "top"
+        named = True
+        last_piece = url.rsplit("/")[-1]
+        extension = self.get_extension(url)
+        tag = last_piece.rsplit(extension)[0][:-1]
+        if "DASH" in tag:
+            tag = url.rsplit("/")[-2][:-1]
+        extension = extension.split("?")[0]
 
-    if args.time:
-        reddit_kwargs["time_filter"] = args.time
-    if not args.time_filter and reddit_kwargs["sorting"] == "top":
-        reddit_kwargs["time_filter"] = "all"
+        name = ""
+        if named:
+            name = self.clean_title(post.title)
 
-    # Download-specific settings #
-    download_kwargs = {}
-    if args.archive:
-        download_kwargs["archive_file"] = args.archive
+        file_name = f"{int(count):03d}-{name}-{tag}.{extension}"
+        return file_name
 
-    threads = 5
-    if args.threads:
-        threads = args.threads
+    def archive(self, count, url, archive_file):
+        if count == 0:
+            with open(archive_file, "r") as f:
+                for line in f:
+                    self.archived.append(line.split("\n")[0])
+        if "DASH" in url:
+            tag = url.rsplit("/")[-2]
+        else:
+            last_piece = url.split("/")[-1]
+            extension = self.get_extension(url)
+            tag = last_piece.rsplit(extension)[0][:-1]
+        if tag not in self.archived:
+            with open(archive_file, "a") as f:
+                f.write(f"{tag}\n")
+        else:
+            raise IOError('File already downloaded')  # Needs refinement
 
-    dry_run = False
-    if args.dry_run:
-        dry_run = True
+    @staticmethod
+    def get_extension(url):
+        return url.rsplit("/")[-1].split(".")[-1].split("?")[0]
 
-    # Init directory #
-    directory = None
-    if args.directory:
-        directory = args.directory
-    if "user" in reddit_kwargs:
-        if not args.directory:
-            directory = reddit_kwargs["user"]
-    else:
-        if not args.directory:
-            directory = reddit_kwargs["subreddit"]
-
-    reddit = RedditQuery(**reddit_kwargs)
-
-    if not dry_run:
-        if not os.path.isabs(directory):
-            directory = os.path.join(os.getcwd(), directory)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        from reclut.download import Downloader
-        Downloader(reddit, directory, **download_kwargs).download(threads)
+    @staticmethod
+    def clean_title(title):
+        replacement_list = [
+            (" - ", "_"),
+            ("-", "_"),
+            (".", ""),
+            (",", ""),
+            ("/", ""),
+            ("!", ""),
+            ("?", ""),
+            ("(", ""),
+            (")", ""),
+            ("[", ""),
+            ("]", ""),
+            (" ", "_")
+        ]
+        for to_replace, replacement in replacement_list:
+            title = title.replace(to_replace, replacement)
+        return title

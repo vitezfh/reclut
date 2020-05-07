@@ -10,11 +10,11 @@ def main():
         print_help()
         quit()
     if action == "download":
-        from reclut import downloader
-        downloader.main(sys.argv[2:])
+        from reclut import download
+        download.main(sys.argv[2:])
     elif action == "block":
-        from reclut import blocker
-        blocker.main(sys.argv[2:])
+        from reclut import block
+        block.main(sys.argv[2:])
     elif True:
         for arg in sys.argv[1:]:
             if arg == "-h" or arg == "--help" or arg == "help":

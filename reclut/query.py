@@ -16,7 +16,7 @@ class RedditQuery(object):
         if self.user and self.subreddit:
             pass
         elif self.subreddit:
-            reddit_sub = reddit().subreddit(subreddit)
+            reddit_sub = reddit.subreddit(subreddit)
             if sorting == "top":
                 for count, submission in enumerate(reddit_sub.top(limit=limit, time_filter=time_filter)):
                     choices.append(submission)
@@ -30,7 +30,7 @@ class RedditQuery(object):
                 for count, submission in enumerate(reddit_sub.rising(limit=limit)):
                     choices.append(submission)
         elif self.user:
-            reddit_user = reddit().redditor(user)
+            reddit_user = reddit.redditor(user)
             if sorting == "top":
                 for count, submission in enumerate(reddit_user.top(limit=limit, time_filter=time_filter)):
                     user_posts.append(submission)
