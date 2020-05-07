@@ -18,7 +18,9 @@ To see what actions are available: $ `reclut --help`
 Help for individual actions: $ `reclut <action> --help`
 
 To download /r/wallpapers submissions; the top 10 of the past month; 4 at a time, and archive to wallpapers.txt:
+
 $ `reclut download --subreddit wallpapers --sorting top --time year --limit 10 --threads 4 --archive wallpapers.txt`
+
 $ `reclut download -r wallpapers -s top -t year -n 10 -T 4 -A wallpapers.txt`
 
 # Side Notes
