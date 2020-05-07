@@ -5,18 +5,21 @@ There's also a quick command for blocking many users at once (to, for example, t
 
 # Installation
 
-- Clone the repo: `git clone "https://github.com/vitezfh/reclut"`
+- Clone the repo: $ `git clone "https://github.com/vitezfh/reclut"`
 
-- An empty config should be initialized upon installation to your default config folder. Usually `$HOME/.config/reclut/config`
-- Fill it up by following this: https://praw.readthedocs.io/en/latest/getting_started/authentication.html
+- A default config should be initialized upon installation to your default config folder. Usually `$HOME/.config/reclut/config`
+- Configure by following: https://praw.readthedocs.io/en/latest/getting_started/authentication.html
   
-  **Make a new account for this**, unless you already have one just for this kind of purpose. Your username, password and tokens are all stored in **plaintext**. I'll get around to changing this, but until then.
+  **Make a new account for this**, unless you already have one just for this sort of purpose. Your username, password and tokens are all stored in **plaintext**. I'll get around to changing this, but until then.
 
 # Examples
 
-To download /r/wallpapers submissions; the top 10 of the past year; 4 at a time, and archiving to wallpapers.txt:
-``
+To see what actions are available: $ `reclut --help`
+Help for individual actions: $ `reclut <action> --help`
 
+To download /r/wallpapers submissions; the top 10 of the past month; 4 at a time, and archive to wallpapers.txt:
+$ `reclut download --subreddit wallpapers --sorting top --time year --limit 10 --threads 4 --archive wallpapers.txt`
+$ `reclut download -r wallpapers -s top -t year -n 10 -T 4 -A wallpapers.txt`
 
 # Side Notes
 Decoupling from authentication in PRAW is a priority for the future.
