@@ -1,7 +1,7 @@
 **recult** - a set of tools for reddit; for data-hoarding and avoidance of interaction with the site.
 Can presently be used for downloading media (images, gifs, linked youtube vids with youtube-dl) from subreddits and users.
 It downloads concurrently, and with a symple archiving system built in.
-There's also a quick command for blocking many users at once (to, for example, to easily avoid downloading their posts)
+There's also a quick command for blocking many users at once (to easily avoid downloading their posts, for example)
 
 # Installation
 
