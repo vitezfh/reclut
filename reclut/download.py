@@ -37,9 +37,9 @@ class Downloader(object):
         }
         for key in mime_types:
             mime_types[key] = any(map(lambda x: x in post.url, mime_types[key]))
-        try:
+        if "thumbnail_url" in post.media["oembed"]:
             post_thumbnail_url = post.media["oembed"]["thumbnail_url"]
-        except:
+        else:
             post_thumbnail_url = None
         try:
             post_media_fallback_url = post.media["reddit_video"]["fallback_url"]

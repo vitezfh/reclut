@@ -22,7 +22,7 @@ def main(*args, **kwargs):
                    help="nsfw: none, allowed or only. Defaults to none", type=str)
     p.add_argument("-s", "--sorting",
                    help="sorting: top, hot or rising. Defaults to top", type=str)
-    p.add_argument("-t", "--time-filter",
+    p.add_argument("-t", "--time",
                    help="only if sorting by top: 'all', 'month', 'year' (default)", type=str)
     p.add_argument("-T", "--threads",
                    help="num of simultaneous downloads, defaults to 5", type=int)
@@ -58,8 +58,8 @@ def main(*args, **kwargs):
     else:
         reddit_kwargs["sorting"] = "top"
 
-    if args.time_filter:
-        reddit_kwargs["time_filter"] = args.time_filter
+    if args.time:
+        reddit_kwargs["time_filter"] = args.time
     if not args.time_filter and reddit_kwargs["sorting"] == "top":
         reddit_kwargs["time_filter"] = "all"
 
