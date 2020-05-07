@@ -5,9 +5,7 @@ There's also a quick command for blocking many users at once (to easily avoid do
 
 # Installation
 
-- $ `git clone "https://github.com/vitezfh/reclut"`
-- $ `cd reclut`
-- $ `pip install .`
+- Clone repo and pip install: $ `git clone "https://github.com/vitezfh/reclut" && pip install reclut/`
 
 - A default config should be initialized upon installation to your default config folder. Usually `$HOME/.config/reclut/config`
 - Configure by following: https://praw.readthedocs.io/en/latest/getting_started/authentication.html
