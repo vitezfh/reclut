@@ -15,6 +15,7 @@ There's also a quick command for blocking many users at once (to easily avoid do
 # Examples
 
 To see what actions are available: $ `reclut --help`
+
 Help for individual actions: $ `reclut <action> --help`
 
 To download /r/wallpapers submissions; the top 10 of the past month; 4 at a time, and archive to wallpapers.txt:
@@ -24,4 +25,4 @@ $ `reclut download --subreddit wallpapers --sorting top --time year --limit 10 -
 $ `reclut download -r wallpapers -s top -t year -n 10 -T 4 -A wallpapers.txt`
 
 # Side Notes
-Avoiding authentication is definitely desired and will be done if possible,
+This is developed sporadically; interface changes and breakage are to be expected.
