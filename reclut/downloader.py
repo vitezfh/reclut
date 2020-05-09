@@ -109,7 +109,6 @@ class Downloader(object):
         003-user123-BigAwesomeHorse.webm
         """
         if self.archive_file: self.archive(count, url, self.archive_file)
-
         named = True
         last_piece = url.rsplit("/")[-1]
         extension = self.get_extension(url)
@@ -117,7 +116,6 @@ class Downloader(object):
         if "DASH" in tag:
             tag = url.rsplit("/")[-2][:-1]
         extension = extension.split("?")[0]
-
         name = ""
         if named:
             name = self.clean_title(post.title)

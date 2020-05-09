@@ -31,7 +31,7 @@ usage: reclut --help/-h
 
 See README at github.com/vitezfh/reclut on how to configure reclut
 
-Version: ({__version__}) - 20-04-18
+Version: ({__version__})
 """)
 
 
