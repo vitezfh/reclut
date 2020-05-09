@@ -23,8 +23,6 @@ class Downloader(object):
             # Quick benchmark:
             #   Multi-threaded(6): 18.5s
             #   Single-threaded: 42.5s
-            # with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-            #    executor.map(download_worker, self.reddit.get_posts())
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
                 executor.map(self.download_worker, self.reddit.get_posts())
 
@@ -35,6 +33,7 @@ class Downloader(object):
             "video": [".webm"],
             "misc": [".gifv", "gallery", "/a/"]
         }
+        # Sets e.g. mime_types["video"] to True and the rest to False if applicable
         for key in mime_types:
             mime_types[key] = any(map(lambda x: x in post.url, mime_types[key]))
         try:
@@ -52,28 +51,18 @@ class Downloader(object):
         if mime_types["static_image"] or mime_types["animated_image"]:
             self.fetch_file(post_num, post.url, post)
         elif "imgur" in post.url and not mime_types["misc"]:
-            # TODO: These fail silently (because url-s would 403, etc). It does need a more precise except...
-            # This is good at the time of writing; as it passes on missing, deleted, etc. files.
-            try:
-                tag = post.url.rsplit("/")[-1]
-                self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
-            except:
-                pass
+            tag = post.url.rsplit("/")[-1]
+            self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
         elif "gfycat" in post.url and "gfycat" in post_thumbnail_url:
-            # TODO: These fail silently (because url-s would 403, etc). 
-            # This is good at the time of writing; as it passes on missing, deleted, etc. files.
-            try:
-                tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
-                url = "https://giant.gfycat.com/" + tag + ".webm"
-                self.fetch_file(post_num, url, post)
-            except:
-                pass
+            tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
+            url = "https://giant.gfycat.com/" + tag + ".webm"
+            self.fetch_file(post_num, url, post)
         elif "v.redd.it" in post.url and post_media_dash_url:
             self.fetch_yt_video(post_num, post_media_dash_url, post)
         elif "v.redd.it" in post.url and post_media_fallback_url:
             self.fetch_yt_video(post_num, post_media_fallback_url, post)
         else:
-            print(f"#######\nSkipping: {post.url} \n#######\n")
+            print(f"Skipped #{post_num}: {post.url}")
 
     def fetch_file(self, count, url, post=None):
         try:
@@ -81,12 +70,21 @@ class Downloader(object):
         except IOError:
             return
         with open(os.path.join(self.directory, file_name), "wb+") as handle:
-            with requests.get(url, stream=True, timeout=1) as r:
-                r.raise_for_status()
-                for block in r.iter_content(chunk_size=8192):
-                    if not block:
-                        break
-                    handle.write(block)
+            try:
+                with requests.get(url, stream=True, timeout=1) as r:
+                    r.raise_for_status()
+                    for block in r.iter_content(chunk_size=8192):
+                        if not block:
+                            break
+                        handle.write(block)
+            except requests.exceptions.HTTPError as errh:
+                print("Http Error:", errh)
+            except requests.exceptions.ConnectionError as errc:
+                print("Error Connecting:", errc)
+            except requests.exceptions.Timeout as errt:
+                print("Timeout Error:", errt)
+            except requests.exceptions.RequestException as err:
+                print("Request Error:", err)
 
     def fetch_yt_video(self, count, url, post=None):
         import youtube_dl

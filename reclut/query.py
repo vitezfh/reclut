@@ -18,27 +18,27 @@ class RedditQuery(object):
         elif self.subreddit:
             reddit_sub = reddit.subreddit(subreddit)
             if sorting == "top":
-                for count, submission in enumerate(reddit_sub.top(limit=limit, time_filter=time_filter)):
+                for submission in reddit_sub.top(limit=limit, time_filter=time_filter):
                     choices.append(submission)
             elif sorting == "hot":
-                for count, submission in enumerate(reddit_sub.hot(limit=limit)):
+                for submission in reddit_sub.hot(limit=limit):
                     choices.append(submission)
             elif sorting == "new":
-                for count, submission in enumerate(reddit_sub.new(limit=limit)):
+                for submission in reddit_sub.new(limit=limit):
                     choices.append(submission)
             elif sorting == "rising":
-                for count, submission in enumerate(reddit_sub.rising(limit=limit)):
+                for submission in reddit_sub.rising(limit=limit):
                     choices.append(submission)
         elif self.user:
             reddit_user = reddit.redditor(user)
             if sorting == "top":
-                for count, submission in enumerate(reddit_user.top(limit=limit, time_filter=time_filter)):
+                for submission in reddit_user.top(limit=limit, time_filter=time_filter):
                     user_posts.append(submission)
             elif sorting == "hot":
-                for count, submission in enumerate(reddit_user.submissions.hot(limit=limit)):
+                for submission in reddit_user.submissions.hot(limit=limit):
                     choices.append(submission)
             elif sorting == "new":
-                for count, submission in enumerate(reddit_user.submissions.new(limit=limit)):
+                for submission in reddit_user.submissions.new(limit=limit):
                     choices.append(submission)
 
         self.posts = choices
