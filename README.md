@@ -27,7 +27,7 @@ It makes sense now, however, to include some basic ones as the project is at a s
 
 No error handling for passed arguments is present. Some arguments aren't enforced.
 
-I'm packaging the project manually, so the versioning is slightly out of whack. That's at a low priority as this isn't to be used in scenarios where that would matter.
+I'm packaging the project manually, so the versioning is slightly out of whack. That's at a low priority as this is yet to be used in scenarios where that would matter.
 
 # Installation
 
