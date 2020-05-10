@@ -27,6 +27,8 @@ It makes sense now, however, to include some basic ones as the project is at a s
 
 No error handling for passed arguments is present. Some arguments aren't enforced.
 
+youtube-dl is a huge library, and is loaded on demand for performance, but I ought to make it optional.
+
 I'm packaging the project manually, so the versioning is slightly out of whack. That's at a low priority as this is yet to be used in scenarios where that would matter.
 
 # Installation
