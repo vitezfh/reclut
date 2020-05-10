@@ -3,10 +3,10 @@ import sys
 from reclut.reddit import reddit
 
 
-def main(*args, **kwargs):
+def main():
     for user in sys.argv[2:]:
+        print(f"blocking {user} ... ")
         try:
-            print(f"blocking {user} ... ")
             reddit.redditor(user).block()
             print("done\n")
         except:
