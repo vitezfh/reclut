@@ -11,7 +11,7 @@ Currently, reclut can be used for:
 
 # Ambitions and Flaws
 
-This is a tool I hope it will get used regularly once at a fleshed-out, stable state.
+This is a tool I'm hoping will get regular use once at a fleshed-out, stable state.
 
 It will particularly be useful to those who are:
 - with an intermittent internet connection
