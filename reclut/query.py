@@ -2,6 +2,7 @@ from reclut.reddit import reddit
 
 
 class RedditQuery(object):
+    """Processes a 'request' based on the parameters given"""
     def __init__(self, subreddit=None, user=None, limit=10,
                  adult=None, sorting="top", time_filter="year"):
         self.subreddit = subreddit
@@ -44,7 +45,16 @@ class RedditQuery(object):
         self.posts = choices
 
     def get_posts(self):
-        def post_generator(posts, adult, limit):
+        """Returns a list of filtered post tuples.
+        [
+            (Submission(id='7mjw12'), 0),
+            (Submission(id='5gn8ru'), 1),
+            (Submission(id='7431qq'), 2),
+            (Submission(id='7kvjuz'), 3)
+        ]
+        """
+        def generate_posts(posts, adult):
+            """Yields posts, filtered by their rating"""
             for post_num, post in enumerate(posts):
                 post = posts[post_num]
                 if adult == "allowed" or adult == "yes" or adult == "true" or adult == True:
@@ -57,7 +67,7 @@ class RedditQuery(object):
                     yield post, post_num
 
         posts = []
-        for post, post_num in post_generator(self.posts, self.adult, self.limit):
+        for post, post_num in generate_posts(self.posts, self.adult):
             print(f"\n#{post_num}: {post.title}\n{post.url}")
             posts.append((post, post_num))
         return posts

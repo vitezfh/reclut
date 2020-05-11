@@ -3,8 +3,11 @@ import os
 
 import requests
 
+from reclut.utils import get_extension, sanitize_title
+
 
 class Downloader(object):
+    """Downloads reddit posts, given a """
     def __init__(self, query, directory, archive_file=None):
         self.reddit = query
         self.directory = directory
@@ -13,12 +16,12 @@ class Downloader(object):
 
     def download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
         post, post_num = args
-        self.fetch_mimes(post, post_num)
+        self.fetch_mime(post, post_num)
 
     def download(self, threads):
         if threads == 0 or threads == 1:
             for post, post_num in self.reddit.get_posts():
-                self.fetch_mimes(post, post_num)
+                self.fetch_mime(post, post_num)
         else:
             # Quick benchmark:
             #   Multi-threaded(6): 18.5s
@@ -26,7 +29,8 @@ class Downloader(object):
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
                 executor.map(self.download_worker, self.reddit.get_posts())
 
-    def fetch_mimes(self, post, post_num):
+    def fetch_mime(self, post, post_num):
+        """Determines a the type of mime in reddit post, and uses appropriate method to fetch"""
         mime_types = {
             "static_image": [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
             "animated_image": [".gif"],
@@ -65,6 +69,7 @@ class Downloader(object):
             print(f"Skipped #{post_num}: {post.url}")
 
     def fetch_file(self, count, url, post=None):
+        """fetches any type of file"""
         try:
             file_name = self.get_filename(count, url, post)
         except IOError:
@@ -87,6 +92,7 @@ class Downloader(object):
                 print("Request Error:", err)
 
     def fetch_yt_video(self, count, url, post=None):
+        """Fetches a youtube video, but first imports the library for that"""
         import youtube_dl
         try:
             filename = self.get_filename(count, url, post).strip(".mpd")
@@ -111,19 +117,23 @@ class Downloader(object):
         if self.archive_file: self.archive(count, url, self.archive_file)
         named = True
         last_piece = url.rsplit("/")[-1]
-        extension = self.get_extension(url)
+        extension = get_extension(url)
         tag = last_piece.rsplit(extension)[0][:-1]
         if "DASH" in tag:
             tag = url.rsplit("/")[-2][:-1]
         extension = extension.split("?")[0]
         name = ""
         if named:
-            name = self.clean_title(post.title)
+            name = sanitize_title(post.title)
 
         file_name = f"{int(count):03d}-{name}-{tag}.{extension}"
         return file_name
 
     def archive(self, count, url, archive_file):
+        """
+        Saves tags to file, if not already present there.
+        If present, raises IOError to stop them from getting downloaded.
+        """
         if count == 0:
             with open(archive_file, "r") as f:
                 for line in f:
@@ -132,7 +142,7 @@ class Downloader(object):
             tag = url.rsplit("/")[-2]
         else:
             last_piece = url.split("/")[-1]
-            extension = self.get_extension(url)
+            extension = get_extension(url)
             tag = last_piece.rsplit(extension)[0][:-1]
         if tag not in self.archived:
             with open(archive_file, "a") as f:
@@ -140,26 +150,3 @@ class Downloader(object):
         else:
             raise IOError('File already downloaded')  # Needs refinement
 
-    @staticmethod
-    def get_extension(url):
-        return url.rsplit("/")[-1].split(".")[-1].split("?")[0]
-
-    @staticmethod
-    def clean_title(title):
-        replacement_list = [
-            (" - ", "_"),
-            ("-", "_"),
-            (".", ""),
-            (",", ""),
-            ("/", ""),
-            ("!", ""),
-            ("?", ""),
-            ("(", ""),
-            (")", ""),
-            ("[", ""),
-            ("]", ""),
-            (" ", "_")
-        ]
-        for to_replace, replacement in replacement_list:
-            title = title.replace(to_replace, replacement)
-        return title
