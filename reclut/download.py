@@ -2,7 +2,7 @@
 import argparse
 import os
 
-from reclut.query import RedditQuery
+from reclut.reddit_query import RedditQuery
 
 
 def main(*args, **kwargs):

@@ -7,12 +7,13 @@ from reclut.utils import get_extension, sanitize_title
 
 
 class Downloader(object):
-    """Downloads reddit posts, given a """
-    def __init__(self, query, directory, archive_file=None):
-        self.reddit = query
+    """Downloads reddit posts, given a reddit_query object"""
+    def __init__(self, reddit_query, directory, archive_file=None):
+        self.reddit = reddit_query
         self.directory = directory
         self.archive_file = archive_file
         self.archived = []
+        self.download_yt = False
 
     def download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
         post, post_num = args
@@ -34,7 +35,7 @@ class Downloader(object):
         mime_types = {
             "static_image": [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
             "animated_image": [".gif"],
-            "video": [".webm"],
+            "video": [".webm", ".mp4"],
             "misc": [".gifv", "gallery", "/a/"]
         }
         # Sets e.g. mime_types["video"] to True and the rest to False if applicable
@@ -52,24 +53,31 @@ class Downloader(object):
             post_media_dash_url = post.media["reddit_video"]["dash_url"]
         except:
             post_media_dash_url = None
-        if mime_types["static_image"] or mime_types["animated_image"]:
+        # Fetches direct links to media files
+        if mime_types["static_image"] or mime_types["animated_image"] or mime_types["video"]:
             self.fetch_file(post_num, post.url, post)
+        # Fetches imgur jpegs
         elif "imgur" in post.url and not mime_types["misc"]:
             tag = post.url.rsplit("/")[-1]
             self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
+        # Gfycat webms. And only for sfw? Haven't tested it
         elif "gfycat" in post.url and "gfycat" in post_thumbnail_url:
             tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
             url = "https://giant.gfycat.com/" + tag + ".webm"
             self.fetch_file(post_num, url, post)
+        # Fetches integrated reddit videos using youtube-dl
         elif "v.redd.it" in post.url and post_media_dash_url:
-            self.fetch_yt_video(post_num, post_media_dash_url, post)
+            self.fetch_with_yt_downloader(post_num, post_media_dash_url, post)
         elif "v.redd.it" in post.url and post_media_fallback_url:
-            self.fetch_yt_video(post_num, post_media_fallback_url, post)
+            self.fetch_with_yt_downloader(post_num, post_media_fallback_url, post)
+        # Fetches actual youtube links, these are often long and possibly unwanted
+        elif ("youtube.com" in post.url or "youtu.be" in post.url) and self.download_yt:
+            self.fetch_with_yt_downloader(post_num, post.url, post)
         else:
             print(f"Skipped #{post_num}: {post.url}")
 
     def fetch_file(self, count, url, post=None):
-        """fetches any type of file"""
+        """Fetches any type of file"""
         try:
             file_name = self.get_filename(count, url, post)
         except IOError:
@@ -91,16 +99,21 @@ class Downloader(object):
             except requests.exceptions.RequestException as err:
                 print("Request Error:", err)
 
-    def fetch_yt_video(self, count, url, post=None):
+    def fetch_with_yt_downloader(self, count, url, post=None):
         """Fetches a youtube video, but first imports the library for that"""
         import youtube_dl
         try:
             filename = self.get_filename(count, url, post).strip(".mpd")
         except IOError:
             return
-        ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
-                    'outtmpl': f'{filename}',
-                    'quiet': True}
+        if self.download_yt:
+            ydl_opts = {'outtmpl': f'{filename}',
+                        'quiet': True}
+        else:
+            ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
+                        'outtmpl': f'{filename}',
+                        'quiet': True}
+        
         working_directory = os.getcwd()
         os.chdir(self.directory)
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:

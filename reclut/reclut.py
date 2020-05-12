@@ -14,11 +14,15 @@ def main():
         download.main(sys.argv[2:])
     elif action == "block":
         from reclut import block
-        block.main(sys.argv[2:])
+        block.main()
     elif True:
         for arg in sys.argv[1:]:
             if arg == "-h" or arg == "--help" or arg == "help":
                 print_help()
+            else:
+                print(f"Invalid Action: {action}\n")
+                print_help()
+                exit()
 
 
 def print_help():
