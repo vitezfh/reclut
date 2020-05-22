@@ -4,6 +4,7 @@ import os
 import requests
 
 from reclut.utils import get_extension, sanitize_title
+from bs4 import BeautifulSoup
 
 
 class Downloader(object):
@@ -60,10 +61,16 @@ class Downloader(object):
         elif "imgur" in post.url and not mime_types["misc"]:
             tag = post.url.rsplit("/")[-1]
             self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
-        # Gfycat webms. And only for sfw? Haven't tested it
         elif "gfycat" in post.url and "gfycat" in post_thumbnail_url:
             tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
             url = "https://giant.gfycat.com/" + tag + ".webm"
+            self.fetch_file(post_num, url, post)
+        # Like gfycat but for nfsw webms. Needs testing
+        elif "redgifs" in post.url: #and "redgifs" in post_thumbnail_url
+            tag = post.url.rsplit("/")[-1]
+            # TODO: Add higher quality parameter flag. Because there's also a #mp4Source
+            soup = BeautifulSoup(requests.get("https://www.gifdeliverynetwork.com/" + tag).text, features="html.parser")
+            url = soup.select_one('#webmSource')['src']
             self.fetch_file(post_num, url, post)
         # Fetches integrated reddit videos using youtube-dl
         elif "v.redd.it" in post.url and post_media_dash_url:
