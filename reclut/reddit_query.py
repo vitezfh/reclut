@@ -11,38 +11,39 @@ class RedditQuery(object):
         self.adult = adult
         self.sorting = sorting
         self.time_filter = time_filter
+
         choices = []
         user_posts = []
-
         if self.user and self.subreddit:
+            # TODO: Add either this specific functionality or expand the whole logic to implement filters. I
+            #  suspect the former since the latter would take more time (not cycles) in execution.
+
             pass
         elif self.subreddit:
-            reddit_sub = reddit.subreddit(subreddit)
             if sorting == "top":
-                for submission in reddit_sub.top(limit=limit, time_filter=time_filter):
+                for submission in reddit.subreddit(subreddit).top(limit=limit, time_filter=time_filter):
                     choices.append(submission)
             elif sorting == "hot":
-                for submission in reddit_sub.hot(limit=limit):
+                for submission in reddit.subreddit(subreddit).hot(limit=limit):
                     choices.append(submission)
             elif sorting == "new":
-                for submission in reddit_sub.new(limit=limit):
+                for submission in reddit.subreddit(subreddit).new(limit=limit):
                     choices.append(submission)
             elif sorting == "rising":
-                for submission in reddit_sub.rising(limit=limit):
+                for submission in reddit.subreddit(subreddit).rising(limit=limit):
                     choices.append(submission)
         elif self.user:
-            reddit_user = reddit.redditor(user)
             if sorting == "top":
-                for submission in reddit_user.top(limit=limit, time_filter=time_filter):
+                for submission in reddit.redditor(user).top(limit=limit, time_filter=time_filter):
                     user_posts.append(submission)
             elif sorting == "hot":
-                for submission in reddit_user.submissions.hot(limit=limit):
-                    choices.append(submission)
+                for submission in reddit.redditor(user).submissions.hot(limit=limit):
+                    user_posts.append(submission)
             elif sorting == "new":
-                for submission in reddit_user.submissions.new(limit=limit):
-                    choices.append(submission)
+                for submission in reddit.redditor(user).submissions.new(limit=limit):
+                    user_posts.append(submission)
 
-        self.posts = choices
+        self.posts = choices + user_posts
 
     def get_posts(self):
         """Returns a list of filtered post tuples.
