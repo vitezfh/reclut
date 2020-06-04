@@ -1,0 +1,7 @@
+reclut
+pytest
+mock
+praw
+requests
+beautifulsoup4
+setuptools

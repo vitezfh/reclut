@@ -1,14 +1,13 @@
 import concurrent.futures
 import os
-
 import requests
-
 from reclut.utils import get_extension, sanitize_title
 from bs4 import BeautifulSoup
 
 
 class Downloader(object):
     """Downloads reddit posts, given a reddit_query object"""
+
     def __init__(self, reddit_query, directory, archive_file=None):
         self.reddit = reddit_query
         self.directory = directory
@@ -16,22 +15,22 @@ class Downloader(object):
         self.archived = []
         self.download_yt = False
 
-    def download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
+    def _download_worker(self, args):  # Gets mapped as a worker by executor (gets squelched)
         post, post_num = args
-        self.fetch_mime(post, post_num)
+        self._fetch_mime(post, post_num)
 
     def download(self, threads):
         if threads == 0 or threads == 1:
             for post, post_num in self.reddit.get_posts():
-                self.fetch_mime(post, post_num)
+                self._fetch_mime(post, post_num)
         else:
             # Quick benchmark:
             #   Multi-threaded(6): 18.5s
             #   Single-threaded: 42.5s
             with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                executor.map(self.download_worker, self.reddit.get_posts())
+                executor.map(self._download_worker, self.reddit.get_posts())
 
-    def fetch_mime(self, post, post_num):
+    def _fetch_mime(self, post, post_num):
         """Determines a the type of mime in reddit post, and uses appropriate method to fetch"""
         mime_types = {
             "static_image": [".jpg", ".png", ".jpeg", ".PNG", ".JPEG", ".JPG"],
@@ -42,51 +41,39 @@ class Downloader(object):
         # Sets e.g. mime_types["video"] to True and the rest to False if applicable
         for key in mime_types:
             mime_types[key] = any(map(lambda x: x in post.url, mime_types[key]))
-        try:
-            post_thumbnail_url = post.media["oembed"]["thumbnail_url"]
-        except:
-            post_thumbnail_url = None
-        try:
-            post_media_fallback_url = post.media["reddit_video"]["fallback_url"]
-        except:
-            post_media_fallback_url = None
-        try:
-            post_media_dash_url = post.media["reddit_video"]["dash_url"]
-        except:
-            post_media_dash_url = None
         # Fetches direct links to media files
         if mime_types["static_image"] or mime_types["animated_image"] or mime_types["video"]:
-            self.fetch_file(post_num, post.url, post)
+            self._download(post_num, post.url, post)
         # Fetches imgur jpegs
         elif "imgur" in post.url and not mime_types["misc"]:
             tag = post.url.rsplit("/")[-1]
-            self.fetch_file(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
-        elif "gfycat" in post.url and "gfycat" in post_thumbnail_url:
-            tag = (post_thumbnail_url.rsplit("/")[-1]).rsplit("-")[0]
+            self._download(post_num, "https://i.imgur.com/" + tag + ".jpg", post)
+        elif "gfycat" in post.url and "gfycat" in post.media["oembed"]["thumbnail_url"]:
+            tag = (post.media["oembed"]["thumbnail_url"].rsplit("/")[-1]).rsplit("-")[0]
             url = "https://giant.gfycat.com/" + tag + ".webm"
-            self.fetch_file(post_num, url, post)
+            self._download(post_num, url, post)
         # Like gfycat but for nfsw webms. Needs testing
-        elif "redgifs" in post.url: #and "redgifs" in post_thumbnail_url
+        elif "redgifs" in post.url:  # and "redgifs" in post_thumbnail_url
             tag = post.url.rsplit("/")[-1]
             # TODO: Add higher quality parameter flag. Because there's also a #mp4Source
             soup = BeautifulSoup(requests.get("https://www.gifdeliverynetwork.com/" + tag).text, features="html.parser")
             url = soup.select_one('#webmSource')['src']
-            self.fetch_file(post_num, url, post)
+            self._download(post_num, url, post)
         # Fetches integrated reddit videos using youtube-dl
-        elif "v.redd.it" in post.url and post_media_dash_url:
-            self.fetch_with_yt_downloader(post_num, post_media_dash_url, post)
-        elif "v.redd.it" in post.url and post_media_fallback_url:
-            self.fetch_with_yt_downloader(post_num, post_media_fallback_url, post)
+        elif "v.redd.it" in post.url and post.media["reddit_video"]["dash_url"]:
+            self._yt_download(post_num, post.media["reddit_video"]["dash_url"], post)
+        elif "v.redd.it" in post.url and post.media["reddit_video"]["dash_url"]:
+            self._yt_download(post_num, post.media["reddit_video"]["fallback_url"], post)
         # Fetches actual youtube links, these are often long and possibly unwanted
         elif ("youtube.com" in post.url or "youtu.be" in post.url) and self.download_yt:
-            self.fetch_with_yt_downloader(post_num, post.url, post)
+            self._yt_download(post_num, post.url, post)
         else:
             print(f"Skipped #{post_num}: {post.url}")
 
-    def fetch_file(self, count, url, post=None):
+    def _download(self, count, url, post=None):
         """Fetches any type of file"""
         try:
-            file_name = self.get_filename(count, url, post)
+            file_name = self._get_filename(count, url, post)
         except IOError:
             return
         with open(os.path.join(self.directory, file_name), "wb+") as handle:
@@ -106,11 +93,11 @@ class Downloader(object):
             except requests.exceptions.RequestException as err:
                 print("Request Error:", err)
 
-    def fetch_with_yt_downloader(self, count, url, post=None):
+    def _yt_download(self, count, url, post=None):
         """Fetches a youtube video, but first imports the library for that"""
         import youtube_dl
         try:
-            filename = self.get_filename(count, url, post).strip(".mpd")
+            filename = self._get_filename(count, url, post).strip(".mpd")
         except IOError:
             return
         if self.download_yt:
@@ -120,21 +107,22 @@ class Downloader(object):
             ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
                         'outtmpl': f'{filename}',
                         'quiet': True}
-        
+
         working_directory = os.getcwd()
         os.chdir(self.directory)
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         os.chdir(working_directory)
 
-    def get_filename(self, count, url, post):
+    def _get_filename(self, count, url, post):
         """
         Returns a string formatted as, for example
         001-subreddit-xxxxxxxxxxxx.jpg
         002-funnygifs-djakj431kjdja.gif
         003-user123-BigAwesomeHorse.webm
         """
-        if self.archive_file: self.archive(count, url, self.archive_file)
+        # TODO: Refinement on the archiving logistics...
+        if self.archive_file: self._archive(count, url, self.archive_file)
         named = True
         last_piece = url.rsplit("/")[-1]
         extension = get_extension(url)
@@ -149,11 +137,12 @@ class Downloader(object):
         file_name = f"{int(count):03d}-{name}-{tag}.{extension}"
         return file_name
 
-    def archive(self, count, url, archive_file):
+    def _archive(self, count, url, archive_file):
         """
         Saves tags to file, if not already present there.
         If present, raises IOError to stop them from getting downloaded.
         """
+        # TODO: Refinement on logic
         if count == 0:
             with open(archive_file, "r") as f:
                 for line in f:
@@ -169,4 +158,3 @@ class Downloader(object):
                 f.write(f"{tag}\n")
         else:
             raise IOError('File already downloaded')  # Needs refinement
-

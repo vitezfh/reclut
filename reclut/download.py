@@ -87,7 +87,7 @@ def main(*args, **kwargs):
         if not args.directory:
             directory = reddit_kwargs["subreddit"]
 
-    reddit = RedditQuery(**reddit_kwargs)
+    reddit_query = RedditQuery(**reddit_kwargs)
 
     if not dry_run:
         if not os.path.isabs(directory):
@@ -95,4 +95,4 @@ def main(*args, **kwargs):
         if not os.path.exists(directory):
             os.makedirs(directory)
         from reclut.downloader import Downloader
-        Downloader(reddit, directory, **download_kwargs).download(threads)
+        Downloader(reddit_query, directory, **download_kwargs).download(threads)
