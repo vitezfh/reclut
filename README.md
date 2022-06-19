@@ -33,13 +33,13 @@ I'm packaging the project manually, so the versioning is slightly out of whack. 
 
 # Installation
 
-Clone repo and pip install: $ `git clone "https://github.com/vitezfh/reclut" && pip install reclut/`
+Clone and install: $ `git clone https://github.com/vitezfh/reclut && pip install reclut/`
 
 A default config should be initialized upon installation to your default config folder. Usually `$HOME/.config/reclut/config`
 
 Configure by following: https://praw.readthedocs.io/en/latest/getting_started/authentication.html
   
-  **Make a new account for this**, unless you already have one just for this sort of purpose. Your username, password and tokens are all stored in your config folder. I'm thinking of ways to change this.
+  **Make a new account for this**, unless you already have one just for this sort of purpose. Your username, password and tokens are all stored in your config folder. This will change eventually.
   
 # Examples
 
