@@ -64,7 +64,7 @@ class Downloader(object):
             self._yt_download(post_num, post.media["reddit_video"]["dash_url"], post)
         elif "v.redd.it" in post.url and post.media["reddit_video"]["dash_url"]:
             self._yt_download(post_num, post.media["reddit_video"]["fallback_url"], post)
-        # Fetches actual youtube links, these are often long and possibly unwanted
+        # Fetches actual youtube videos, these are sometimes long and possibly unwanted
         elif ("youtube.com" in post.url or "youtu.be" in post.url) and self.download_yt:
             self._yt_download(post_num, post.url, post)
         else:
@@ -104,7 +104,7 @@ class Downloader(object):
             ydl_opts = {'outtmpl': f'{filename}',
                         'quiet': True}
         else:
-            ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1',
+            ydl_opts = {'format': 'dash-VIDEO-1+dash-AUDIO-1', # Might not be working, throws error
                         'outtmpl': f'{filename}',
                         'quiet': True}
 
@@ -121,7 +121,6 @@ class Downloader(object):
         002-funnygifs-djakj431kjdja.gif
         003-user123-BigAwesomeHorse.webm
         """
-        # TODO: Refinement on the archiving logistics...
         if self.archive_file: self._archive(count, url, self.archive_file)
         named = True
         last_piece = url.rsplit("/")[-1]
@@ -142,7 +141,6 @@ class Downloader(object):
         Saves tags to file, if not already present there.
         If present, raises IOError to stop them from getting downloaded.
         """
-        # TODO: Refinement on logic
         if count == 0:
             with open(archive_file, "r") as f:
                 for line in f:
