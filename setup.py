@@ -15,14 +15,15 @@ setup(
     version=reclut.__version__,
     packages=find_packages(),
     author='vitezfh',
-    author_email='vitezfh@gmail.com',
+    author_email='stjepan@vitez.xyz',
     description='Download media from subreddits - and other tools',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
         'requests',
         'youtube_dl',
-        "praw"
+        "praw",
+        "beautifulsoup4"
     ],
     url='https://github.com/vitezfh/reclut',
     classifiers=[
@@ -30,7 +31,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Internet',
         'Topic :: Multimedia :: Sound/Audio',
     ],
